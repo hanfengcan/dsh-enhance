@@ -1,0 +1,12 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="32" height="32" rx="10" fill="url(#session-schedule-bg)" />
+  <circle cx="18" cy="19" r="7.5" stroke="#FFFFFF" stroke-width="1.6" />
+  <path d="M18 14.6V19L20.9 20.9" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M11.4 6.6 9.5 8.9M24.6 6.6 26.5 8.9" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" />
+  <defs>
+    <linearGradient id="session-schedule-bg" x1="5" y1="5" x2="31" y2="31" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6FB2EE" />
+      <stop offset="1" stop-color="#3E58D6" />
+    </linearGradient>
+  </defs>
+</svg>

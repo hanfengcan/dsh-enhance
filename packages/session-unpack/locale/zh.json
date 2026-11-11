@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "会话解压",
+    "description": "把一个 dsh 会话解压成 transcript.md、session.jsonl 与 meta.json，供模型分析。"
+  }
+}

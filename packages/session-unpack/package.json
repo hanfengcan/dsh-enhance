@@ -1,0 +1,25 @@
+{
+  "name": "dsh-enhance-session-unpack",
+  "version": "0.2.0",
+  "description": "Unpack one dsh Session into a readable directory: transcript.md, session.jsonl and meta.json",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./session-unpack": "./lib/session-unpack.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib/**", "locale/*.json"],
+  "scripts": {
+    "bundle": "tsdown",
+    "watch": "tsdown --watch"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.2"
+  },
+  "engines": {
+    "dsh": ">=0.2.2-rc.1"
+  }
+}

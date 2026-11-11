@@ -1,0 +1,10 @@
+# Build output: the deliverable is built from `src/`, never edited by hand.
+lib/
+node_modules/
+
+# The multi-component guide stays on disk but is deliberately not tracked.
+docs/multi-component-bundle.md
+
+# Editor and OS noise
+.DS_Store
+*.log

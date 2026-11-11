@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session unpack",
+    "description": "Unpack one dsh Session into transcript.md, session.jsonl and meta.json for a model to read."
+  }
+}
