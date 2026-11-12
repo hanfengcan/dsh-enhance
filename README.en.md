@@ -20,6 +20,40 @@ leaves the others working.
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/plugins-components.png" width="650" alt="The three components on the Plugins page">
+</p>
+
+The Plugins page: three components, each with its own name, description and switch — turning one off
+leaves the other two working.
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/schedule-dialog.png" width="240" alt="The new automation task dialog">
+      <br><b>Automation task</b>
+      <br>The creation dialog
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/notify-settings.png" width="240" alt="The reply-alerts settings page">
+      <br><b>Reply alerts</b>
+      <br>The settings on the plugin's detail page
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/notify-tones.png" width="240" alt="The tone picker">
+      <br><b>Tone picker</b>
+      <br>Four tones, and picking one plays it
+    </td>
+  </tr>
+</table>
+
+All four tones (*Chime*, *Bell*, *Pulse*, *Wave*) are synthesized with Web Audio on the spot — no
+audio file ships; the switches and the tone live in this browser's `localStorage`.
+
+---
+
 ## Layout
 
 The bundle carries no code of its own: it inserts three rows into the composition tree. The code lives

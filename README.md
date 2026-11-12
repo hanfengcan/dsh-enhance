@@ -17,6 +17,39 @@
 
 ---
 
+## 界面
+
+<p align="center">
+  <img src="docs/plugins-components.png" width="650" alt="插件页上的三个组件">
+</p>
+
+插件页：三个组件各带自己的名字、描述和开关，关掉其中一个另两个照常工作。
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/schedule-dialog.png" width="240" alt="新建自动化任务的弹窗">
+      <br><b>自动化任务</b>
+      <br>新建任务的弹窗
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/notify-settings.png" width="240" alt="回复提醒的设置页">
+      <br><b>回复提醒</b>
+      <br>插件详情页里的设置
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/notify-tones.png" width="240" alt="音色下拉菜单">
+      <br><b>音色下拉</b>
+      <br>四种音色，选中即试听
+    </td>
+  </tr>
+</table>
+
+回复提醒的四种音色（清脆 / 铃声 / 短促 / 渐强）全部由 Web Audio 现场合成，不带任何音频文件；
+开关与音色记在浏览器的 `localStorage` 里。
+
+---
+
 ## 目录结构
 
 bundle 自己不带代码，它只往组合树里插三行。代码在三个组件包里，每个包一份 README。

@@ -10,7 +10,7 @@
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
-  "files": ["cordis.patch.yml", "locale/*.json", "icon.svg", "README.md", "README.en.md", "docs/*.md"],
+  "files": ["cordis.patch.yml", "locale/*.json", "icon.svg", "README.md", "README.en.md", "docs/*.md", "docs/*.png"],
   "scripts": {
     "bundle": "npm --prefix packages/schedule run bundle && npm --prefix packages/session-unpack run bundle && npm --prefix packages/notify run bundle"
   },
