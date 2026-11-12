@@ -2,7 +2,8 @@
  * Reading a dsh Session log.
  *
  * Three shapes carry a session: a concatenated Zstandard log, a plain JSONL
- * log, and a ZIP exported from the Session log export. All three decode to the
+ * log, and a ZIP exported from the Session log export — or a ZIP that was
+ * assembled by hand and holds the compressed log. All of them decode to the
  * same event stream.
  * @module dsh-enhance/session-unpack/log
  */
@@ -77,7 +78,11 @@ export async function readSessionLog(path, signal) {
     const wanted = findExportedLogEntry(bytes)
     const entry = await readZipEntry(bytes, wanted)
     if (entry === undefined) throw new Error(`not a session archive: ${absolute} holds no readable ${wanted}`)
-    text = entry.toString('utf8')
+    // An exported archive holds the plain log; a hand-assembled one holds the
+    // compressed log that sits on disk. Both decode to the same event stream.
+    text = wanted.endsWith('.zstd')
+      ? (await decodeZstdFrames(entry, signal)).toString('utf8')
+      : entry.toString('utf8')
   } else if (absolute.endsWith('.zstd')) {
     text = (await decodeZstdFrames(bytes, signal)).toString('utf8')
   } else {

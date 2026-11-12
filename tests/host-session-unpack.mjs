@@ -130,6 +130,21 @@ function fixtureText() {
 }
 
 /**
+ * The fixture session's log as concatenated Zstandard frames — the shape the
+ * log has on disk.
+ * @param frames - how many lines each frame holds.
+ * @returns the frame bytes.
+ */
+function fixtureFrames(frames = 3) {
+  const lines = fixtureText().trimEnd().split('\n')
+  const chunks = []
+  for (let index = 0; index < lines.length; index += frames) {
+    chunks.push(zstdCompressSync(Buffer.from(`${lines.slice(index, index + frames).join('\n')}\n`, 'utf8')))
+  }
+  return Buffer.concat(chunks)
+}
+
+/**
  * A dsh home directory that owns one session log.
  * @param frames - how many Zstandard frames the log is split into.
  * @returns the home directory.
@@ -138,12 +153,7 @@ function fixtureHome(frames = 3) {
   const home = mkdtempSync(join(tmpdir(), 'dsh-unpack-home-'))
   const directory = join(home, 'sessions', '--C-work-repo--', HEADER.id)
   mkdirSync(directory, { recursive: true })
-  const lines = fixtureText().trimEnd().split('\n')
-  const chunks = []
-  for (let index = 0; index < lines.length; index += frames) {
-    chunks.push(zstdCompressSync(Buffer.from(`${lines.slice(index, index + frames).join('\n')}\n`, 'utf8')))
-  }
-  writeFileSync(join(directory, 'session.v4.jsonl.zstd'), Buffer.concat(chunks))
+  writeFileSync(join(directory, 'session.v4.jsonl.zstd'), fixtureFrames(frames))
   return home
 }
 
@@ -165,7 +175,7 @@ function crc32(buffer) {
 
 /**
  * A minimal ZIP archive holding the given files, stored without compression.
- * @param files - the entries, by name.
+ * @param files - the entries, by name; the content is text or raw bytes.
  * @returns the archive bytes.
  */
 function buildZip(files) {
@@ -174,7 +184,7 @@ function buildZip(files) {
   let offset = 0
   for (const [name, content] of files) {
     const nameBytes = Buffer.from(name, 'utf8')
-    const data = Buffer.from(content, 'utf8')
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8')
     const checksum = crc32(data)
     const local = Buffer.alloc(30)
     local.writeUInt32LE(0x04034b50, 0)
@@ -293,6 +303,31 @@ test('a ZIP export is read as the same session', async () => {
   const log = await readSessionLog(path)
   assert.equal(log.header.id, HEADER.id)
   assert.equal((await collectTurns(log.events)).length, 2)
+})
+
+test('a ZIP that holds the compressed log is read as the same session', async () => {
+  const archive = buildZip([['session.v4.jsonl.zstd', fixtureFrames(3)]])
+  const directory = mkdtempSync(join(tmpdir(), 'dsh-unpack-zip-zstd-'))
+  const path = join(directory, 'export.zip')
+  writeFileSync(path, archive)
+
+  const log = await readSessionLog(path)
+  assert.equal(log.header.id, HEADER.id)
+  assert.equal((await collectTurns(log.events)).length, 2)
+})
+
+test('a ZIP that holds several generations unpacks the newest one', async () => {
+  const older = JSON.stringify({ ...HEADER, id: 'session-00000000-0000-0000-0000-000000000000' })
+  const archive = buildZip([
+    ['session.v3.jsonl', `${older}\n`],
+    ['session.v4.jsonl.zstd', fixtureFrames(3)],
+  ])
+  const directory = mkdtempSync(join(tmpdir(), 'dsh-unpack-zip-generations-'))
+  const path = join(directory, 'export.zip')
+  writeFileSync(path, archive)
+
+  const log = await readSessionLog(path)
+  assert.equal(log.header.id, HEADER.id)
 })
 
 test('a plain JSONL log is read as it stands', async () => {

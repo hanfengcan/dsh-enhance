@@ -4,6 +4,10 @@
  * An exported session is a ZIP whose root holds the canonical
  * `session.v<version>.jsonl` text plus the attachments it references. The
  * archive is read with Node's own zlib, one entry at a time.
+ *
+ * A ZIP that was assembled by hand — the session folder zipped as it sits on
+ * disk — holds the compressed log instead (`session.v<version>.jsonl.zstd`),
+ * so that shape is read as well.
  * @module dsh-enhance/session-unpack/zip
  */
 
@@ -21,7 +25,7 @@ const ZIP_CENTRAL_SIGNATURE = 0x02014b50
 const ZIP_LOCAL_SIGNATURE = 0x04034b50
 
 /** The canonical log filename a Session export puts in a ZIP root. */
-const EXPORTED_LOG_PATTERN = /^session(\.v\d+)?\.jsonl$/
+const EXPORTED_LOG_PATTERN = /^session(\.v\d+)?\.jsonl(\.zstd)?$/
 
 /** The asynchronous form of zlib's raw inflate. */
 const inflateRawAsync = promisify(inflateRaw)
@@ -64,13 +68,34 @@ export function listZipEntries(buffer) {
 
 /**
  * The name of the session log an exported archive holds.
+ *
+ * When the archive holds more than one generation of the log, the newest one
+ * wins — and a compressed log is ahead of its plain twin, the same order the
+ * on-disk lookup uses.
  * @param buffer - the archive bytes.
  * @returns the entry name of the session log.
  */
 export function findExportedLogEntry(buffer) {
-  const wanted = listZipEntries(buffer).find(name => EXPORTED_LOG_PATTERN.test(basename(name)))
-  if (wanted === undefined) throw new Error('not a session archive: it holds no session log')
-  return wanted
+  const matches = listZipEntries(buffer).filter(name => EXPORTED_LOG_PATTERN.test(basename(name)))
+  if (matches.length === 0) throw new Error('not a session archive: it holds no session log')
+  return matches.sort(compareLogEntries)[0]
+}
+
+/**
+ * Order two log entry names so the newest generation wins.
+ * @param left - one entry name.
+ * @param right - the other entry name.
+ * @returns a negative number when `left` is the newer generation.
+ */
+function compareLogEntries(left, right) {
+  const version = name => {
+    const matched = /\.v(\d+)\.jsonl/.exec(name)
+    return matched === null ? 0 : Number(matched[1])
+  }
+  const difference = version(right) - version(left)
+  if (difference !== 0) return difference
+  // A compressed log is the current default; keep it ahead of its plain twin.
+  return (right.endsWith('.zstd') ? 1 : 0) - (left.endsWith('.zstd') ? 1 : 0)
 }
 
 /**
