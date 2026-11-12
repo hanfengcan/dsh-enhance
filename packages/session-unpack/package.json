@@ -11,7 +11,7 @@
     "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
-  "files": ["lib/**", "locale/*.json"],
+  "files": ["lib/**", "locale/*.json", "README.md", "README.en.md"],
   "scripts": {
     "bundle": "tsdown",
     "watch": "tsdown --watch"
