@@ -1,13 +1,14 @@
 # dsh-enhance
 
-给 **DeepSeek Harness（dsh）** 补两块能力。它是**一个插件、两个可分别启停的组件**：
+给 **DeepSeek Harness（dsh）** 补三块能力。它是**一个插件、三个可分别启停的组件**：
 
 | 组件 | 做什么 |
 | --- | --- |
 | **自动化任务**（`dsh-enhance-schedule`） | 在输入框下方的状态栏里，为**当前对话**创建一个自动化任务，并直接打开官方右侧任务页签 |
 | **会话解压**（`dsh-enhance-session-unpack`） | 给 agent 一个 `unpack_session` 工具，把一个 dsh session 解压成可读的目录（`transcript.md` + `session.jsonl` + `meta.json`） |
+| **回复提醒**（`dsh-enhance-notify`） | 一轮回复结束时放一段提示音；窗口不在前台时再弹一条 Windows 通知（开关在插件详情页里配） |
 
-插件页里这两个组件各带自己的名字、描述和开关 —— 关掉其中一个，另一个照常工作。
+插件页里这三个组件各带自己的名字、描述和开关 —— 关掉其中一个，另一个照常工作。
 
 中文 | [English](./README.en.md)
 
@@ -132,12 +133,61 @@ dsh 自带的「新建自动化任务」只能建**新会话**或**一次性新�
 
 ---
 
+## 三、「回复提醒」组件：回复结束时响一下
+
+### 它解决什么问题
+
+dsh 自己不会告诉你「这一轮说完了」。人切到别的窗口干活，回来时只能盯着窗口猜；
+桌面端更糟 —— 窗口最小化以后什么也看不见。
+
+这个组件补上这个提示：**一轮回复结束时播放一段提示音**；**窗口不在前台时**（切到别的应用、
+最小化、或者浏览器切了标签）**再弹一条系统通知**，在 Windows 上就是操作中心里那条 toast，
+点它能把窗口拉回前台。
+
+### 它怎么知道「回复结束了」
+
+宿主在 **Agent 的运行状态变化**时会转发一个 `api-session/status` 事件（`sessionId, running`）。
+组件自己记着哪些会话正在跑：**`true` 记下，`false` 且之前在跑 ⇒ 一轮结束**。
+没有前置 `true` 的 `false`（连接时的初始状态、Agent 被回收）不算一次结束。
+
+子智能体自己的那一轮不算数 —— 用户等的是当前会话的回复。
+
+### 界面
+
+设置放在**插件详情页**里，不占输入框下方的位置：
+
+1. 打开插件页 → 「已安装插件」→ 点进「DSH 增强」；
+2. 在「包含的组件」里找到「回复提醒」，点它那一行的**「配置」**；
+3. 出来的就是这个组件的设置页：
+
+- **提示音**：一轮结束时播放（开关）；
+- **提示音音色**：四种音色任选其一 —— 清脆（两个泛音的短叮）、铃声（基频加三个泛音）、
+  短促（两下低脉冲）、渐强（三个音上行）。四段全是 Web Audio 现场合成的，不带任何音频文件；
+- **系统通知**：窗口不在前台时弹出（开关，浏览器的 Notification API，Windows 上就是原生 toast）；
+- **试听音色**：当场听一遍当前选的音色。
+
+设置里的开关与音色记在浏览器的 `localStorage` 里（键 `dsh.enhance.notify`），换台电脑要重新开。
+
+「配置」这个入口是宿主给组件留的位置（`plugins.row.config`），键是
+`<bundle 包名>#<组件 id>`。它只在这个组件启用时出现，组件关掉后连同它的设置页一起消失。
+
+### 几个已知限制
+
+- **首次播放需要一次用户交互**：浏览器的自动播放策略要求页面先被点过一下。组件在第一次
+  指针/按键事件时就把音频上下文解锁，所以正常用过一轮之后都能响。
+- **通知权限由浏览器管**：第一次弹通知时浏览器会问；被拒了组件会提示去站点设置里放行。
+- **系统通知只在窗口失焦时发**：正看着窗口时再弹 toast 是噪音，不是信号。
+- **只监听状态事件**：所以它知道「这一轮结束了」，但不知道「这一轮说了什么」——
+  通知正文是会话标题，不带内容。
+
+---
+
 ## 目录结构
 
 源码在 `src/`，交付物在 `lib/`。`lib/` 是构建产物，不进版本库。
 
 ```
-dsh-enhance/                  bundle：只往组合树里插两行，自己不带代码
+dsh-enhance/                  bundle：只往组合树里插三行，自己不带代码
 ├── cordis.patch.yml
 ├── locale/                   插件页的标题与描述
 └── packages/
@@ -146,17 +196,23 @@ dsh-enhance/                  bundle：只往组合树里插两行，自己不�
     │   ├── src/client/       浏览器半（按职责拆成十几个模块）
     │   ├── lib/              构建产物（不入库）
     │   └── tsdown.config.mjs
-    └── session-unpack/       组件二：会话解压
-        ├── src/index.js      宿主入口：注册工具、处理越界批准
-        ├── src/session-unpack/  解压实现（frames / zip / paths / log / transcript / artifacts）
+    ├── session-unpack/       组件二：会话解压
+    │   ├── src/index.js      宿主入口：注册工具、处理越界批准
+    │   ├── src/session-unpack/  解压实现（frames / zip / paths / log / transcript / artifacts）
+    │   ├── lib/              构建产物（不入库）
+    │   └── tsdown.config.mjs
+    └── notify/               组件三：回复提醒
+        ├── src/index.js      宿主半（空入口）
+        ├── src/client/       浏览器半（状态事件订阅 / 提示音 / 系统通知 / 配置页）
+        │   └── components/settings-page.js  插件详情页里的设置页
         ├── lib/              构建产物（不入库）
         └── tsdown.config.mjs
 ```
 
 ## 安装
 
-这是一个 dsh **组合包（bundle）**，装进 profile 即可。bundle 自己不带代码，它只往组合树里插两行，
-分别指向两个组件包；两个组件包也要一起装进 profile 的 `node_modules`，宿主才能按包名加载它们。
+这是一个 dsh **组合包（bundle）**，装进 profile 即可。bundle 自己不带代码，它只往组合树里插三行，
+分别指向三个组件包；三个组件包也要一起装进 profile 的 `node_modules`，宿主才能按包名加载它们。
 
 ### 1) 先构建
 
@@ -164,7 +220,7 @@ link 安装指向的就是这个目录，所以**装之前必须先构建一次*
 宿主按包名加载组件时只会拿到一个空入口：
 
 ```sh
-# 根目录一次构建两个组件包
+# 根目录一次构建三个组件包
 npm install
 npm run bundle
 ```
@@ -184,9 +240,10 @@ cd packages/session-unpack && npm install && npm run bundle
 # 1) bundle 本身（它定义「包含的组件」这个清单）
 dsh plugin --profile <你的 profile> add link:/绝对路径/dsh-enhance
 
-# 2) 两个组件包（普通依赖，不是 profile layer）
+# 2) 三个组件包（普通依赖，不是 profile layer）
 dsh plugin --profile <你的 profile> add link:/绝对路径/dsh-enhance/packages/schedule
 dsh plugin --profile <你的 profile> add link:/绝对路径/dsh-enhance/packages/session-unpack
+dsh plugin --profile <你的 profile> add link:/绝对路径/dsh-enhance/packages/notify
 ```
 
 > `declares no dsh.bundle — installed as a plain dependency, not a profile layer` 这句
@@ -202,21 +259,23 @@ dsh plugin --profile <你的 profile> add link:/绝对路径/dsh-enhance/package
 
 ## 卸载
 
-`dsh plugin` 是 pnpm 的转发器，一次只删一个依赖，所以三条都要执行：
+`dsh plugin` 是 pnpm 的转发器，一次只删一个依赖，所以四条都要执行：
 
 ```sh
 dsh plugin --profile <你的 profile> remove dsh-enhance
 dsh plugin --profile <你的 profile> remove dsh-enhance-schedule
 dsh plugin --profile <你的 profile> remove dsh-enhance-session-unpack
+dsh plugin --profile <你的 profile> remove dsh-enhance-notify
 ```
 
-只删第一条的话，两个组件包会作为普通依赖留在 profile 的 `node_modules` 里：组合树不再引用它们，
+只删第一条的话，三个组件包会作为普通依赖留在 profile 的 `node_modules` 里：组合树不再引用它们，
 但文件还在盘上。
 
 ## 版本兼容与已知取舍
 
 客户端半只依赖三个宿主契约：`conversation.composer.dock` 这个 slot、`remote.schedule.create` 这个端点、
 以及 `sidebarRight.openTab('scheduleTask')` 这个官方页签 kind。宿主改了这三样里的任何一个，插件都要跟着改。
+「回复提醒」组件另有两个契约：`api-session/status` 这个状态事件，和 `plugins.row.config` 这个配置页位置。
 宿主半只依赖 `ctx.tools.register` 和 `ctx.approval`。
 
 几个明确的取舍：
@@ -235,9 +294,10 @@ dsh plugin --profile <你的 profile> remove dsh-enhance-session-unpack
 
 | 部位 | 职责 |
 | --- | --- |
-| `cordis.patch.yml` | 往组合树里插两行，一行一个组件 |
+| `cordis.patch.yml` | 往组合树里插三行，一行一个组件 |
 | `packages/schedule/` | **自动化任务**组件：浏览器半（`client.js`，注册状态栏入口、调用 `ctx.remote.schedule.create`）+ 一个空的宿主入口（`index.js`，浏览器代码不能进 Node） |
 | `packages/session-unpack/` | **会话解压**组件：`src/index.js`（宿主入口，注册 `unpack_session`、处理越界读取的批准）+ `src/session-unpack/`（frames / zip / paths / log / transcript / artifacts 六个模块） |
+| `packages/notify/` | **回复提醒**组件：浏览器半（`src/client/`，订阅 `api-session/status`、Web Audio 提示音、系统通知、插件详情页里的配置页）+ 一个空的宿主入口 |
 | `locale/*.json` | 每个组件包各有一份，标题与描述就是插件页上显示的那两行 |
 | `icon.svg` | 插件图标 |
 
@@ -268,16 +328,18 @@ dsh plugin --profile <你的 profile> remove dsh-enhance-session-unpack
 > [`docs/multi-component-bundle.md`](./docs/multi-component-bundle.md)。
 
 ```sh
-npm run bundle                                       # 构建两个组件到 lib/
+npm run bundle                                       # 构建三个组件到 lib/
 
 node --check packages/schedule/src/client/index.js
 node --check packages/schedule/src/index.js
 node --check packages/session-unpack/src/index.js
 node --check packages/session-unpack/src/session-unpack/index.js
+node --check packages/notify/src/client/index.js
 
 node --test tests/client-behavior.mjs         # 客户端半行为测试
 node --test tests/host-session-unpack.mjs      # 解压组件测试
 node --test tests/host-tool-registration.mjs   # 工具注册与批准顺序测试
+node --test tests/notify-behavior.mjs          # 回复提醒组件测试
 ```
 
 三个测试文件都不需要浏览器，也不需要 dsh 进程：
@@ -291,6 +353,11 @@ node --test tests/host-tool-registration.mjs   # 工具注册与批准顺序测�
   三产物写出、zip 导出、纯 jsonl，以及**取消后停止**、**解压期间事件循环仍在跑**。
 - `tests/host-tool-registration.mjs` 用一个假上下文驱动注册进来的工具，覆盖：注册形状、
   **越界先批准后读盘**、工作区内免问、full-access 免问、已授予目录免问、被拒后不留产物。
+- `tests/notify-behavior.mjs` 用浏览器替身驱动回复提醒组件，覆盖：**配置页注册**
+  （`plugins.row.config`，键是 `<bundle>#<组件 id>`）、**不碰 composer dock**、
+  配置页画出两个开关、**运行状态边沿才算一轮结束**、子智能体那一轮不算、
+  **窗口失焦才发系统通知**、两个开关能关掉声音与通知、开关落在 `localStorage` 里、
+  **四种音色都在菜单里**、**选中的音色被记住**、**播放的就是选中的那个音色**。
 
 ## License
 

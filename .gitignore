@@ -8,3 +8,4 @@ docs/multi-component-bundle.md
 # Editor and OS noise
 .DS_Store
 *.log
+*.log.err

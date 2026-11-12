@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Reply alerts",
+    "description": "Play a chime when a reply finishes, and raise a Windows notification while the window is in the background."
+  }
+}

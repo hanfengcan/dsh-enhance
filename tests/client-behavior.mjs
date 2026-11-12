@@ -565,7 +565,7 @@ test('the date and time rows are self-drawn buttons, not native inputs', async (
   const [date, time] = pickerButtons(dialog)
   assert.equal(date.props.type, 'button', 'the date row opens a card from a button')
   assert.equal(time.props.type, 'button', 'the time row opens a card from a button')
-  assert.equal(triggerText(date), '2026/11/18', 'the date reads as YYYY/MM/DD')
+  assert.equal(triggerText(date), momentAhead(7).date.replace(/-/g, '/'), 'the date reads as YYYY/MM/DD')
   assert.equal(triggerGlyph(date).props.viewBox, '0 0 14 14', 'the date wears the shipped calendar glyph')
   assert.equal(triggerGlyph(time).props['data-icon'], 'dsw-icon-clock-outline-regular', 'the time wears the Host clock glyph')
 })

@@ -1,4 +1,4 @@
-# The two components this bundle mounts. Each row is one component with its own
+# The three components this bundle mounts. Each row is one component with its own
 # id, its own plugin page entry and its own enable/disable switch:
 #
 # - `dsh-enhance-schedule`: the Client half. It registers the composer-dock
@@ -7,11 +7,15 @@
 # - `dsh-enhance-session-unpack`: the Host half. It registers the
 #   `unpack_session` tool, which reads one dsh Session artifact and unpacks it
 #   into transcript.md, session.jsonl and meta.json.
+# - `dsh-enhance-notify`: the Client half. It watches the Session status events
+#   and answers a finished turn with a chime and a system notification.
 #
-# Both rows ship enabled. A profile that wants one of them off sets
+# All three rows ship enabled. A profile that wants one of them off sets
 # `disabled: true` on that id in its own `cordis.patch.yml`.
 - insert:
     - id: dsh-enhance-schedule
       name: 'dsh-enhance-schedule'
     - id: dsh-enhance-session-unpack
       name: 'dsh-enhance-session-unpack'
+    - id: dsh-enhance-notify
+      name: 'dsh-enhance-notify'

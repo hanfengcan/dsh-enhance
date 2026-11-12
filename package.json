@@ -1,7 +1,7 @@
 {
   "name": "dsh-enhance",
   "version": "0.2.0",
-  "description": "Two dsh enhancements in one bundle: an automation task for the current conversation, and a session unpacker for analysis",
+  "description": "Three dsh enhancements in one bundle: an automation task for the current conversation, a session unpacker for analysis, and a reply chime",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -12,11 +12,12 @@
   },
   "files": ["cordis.patch.yml", "locale/*.json", "icon.svg", "README.md", "README.en.md", "docs/*.md"],
   "scripts": {
-    "bundle": "npm --prefix packages/schedule run bundle && npm --prefix packages/session-unpack run bundle"
+    "bundle": "npm --prefix packages/schedule run bundle && npm --prefix packages/session-unpack run bundle && npm --prefix packages/notify run bundle"
   },
   "dependencies": {
     "dsh-enhance-schedule": "link:./packages/schedule",
-    "dsh-enhance-session-unpack": "link:./packages/session-unpack"
+    "dsh-enhance-session-unpack": "link:./packages/session-unpack",
+    "dsh-enhance-notify": "link:./packages/notify"
   },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" }
